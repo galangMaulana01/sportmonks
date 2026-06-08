@@ -66,6 +66,20 @@ async def round(round_id: int):
 
         return response.json()
         
+@app.get("/rounds/{round_id}/fixtures")
+async def round_fixtures(round_id: int):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/rounds/{round_id}",
+            params={
+                "api_token": SPORTMONKS_TOKEN,
+                "include": "fixtures"
+            }
+        )
+
+        response.raise_for_status()
+
+        return response.json()
         
 @app.get("/standings/seasons/{season_id}")
 async def standing(season_id: int):
