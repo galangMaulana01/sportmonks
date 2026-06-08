@@ -65,6 +65,18 @@ async def team(team_id: int):
         response.raise_for_status()
         return response.json()
 
+@app.get("/fixtures/date/{date}")
+async def fixtures_by_date(date: str):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/fixtures/date/{date}",
+            params={
+                "api_token": SPORTMONKS_TOKEN
+            }
+        )
+        response.raise_for_status()
+        return response.json()
+        
 
 @app.get("/fixtures/{fixture_id}")
 async def fixture(fixture_id: int):
