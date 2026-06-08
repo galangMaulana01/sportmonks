@@ -30,3 +30,37 @@ async def league(league_id: int):
         response.raise_for_status()
 
         return response.json()
+        
+        
+@app.get("/league/{league_id}/season")
+async def league_season(league_id: int):
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/leagues/{league_id}",
+            params={
+                "api_token": SPORTMONKS_TOKEN,
+                "include": "currentSeason"
+            }
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+        
+
+@app.get("/league/{league_id}/fixtures")
+async def league_fixtures(league_id: int):
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/fixtures",
+            params={
+                "api_token": SPORTMONKS_TOKEN,
+                "filters": f"leagueId:{league_id}"
+            }
+        )
+
+        response.raise_for_status()
+
+        return response.json()
