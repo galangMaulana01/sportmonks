@@ -52,6 +52,21 @@ async def stage(stage_id: int):
         response.raise_for_status()
         return response.json()
         
+@app.get("/rounds/{round_id}")
+async def round(round_id: int):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{BASE_URL}/rounds/{round_id}",
+            params={
+                "api_token": SPORTMONKS_TOKEN
+            }
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+        
+        
 @app.get("/standings/seasons/{season_id}")
 async def standing(season_id: int):
     async with httpx.AsyncClient() as client:
