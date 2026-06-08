@@ -33,7 +33,8 @@ async def season(season_id: int):
         response = await client.get(
             f"{BASE_URL}/seasons/{season_id}",
             params={
-                "api_token": SPORTMONKS_TOKEN
+                "api_token": SPORTMONKS_TOKEN,
+                "include": "stages"
             }
         )
         response.raise_for_status()
