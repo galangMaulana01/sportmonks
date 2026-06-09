@@ -1,9 +1,18 @@
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 from datetime import date
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 SPORTMONKS_TOKEN = os.getenv("SPORTMONKS_API_TOKEN")
 BASE_URL = "https://api.sportmonks.com/v3/football"
