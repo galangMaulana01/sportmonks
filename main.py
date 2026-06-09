@@ -58,7 +58,10 @@ async def round(round_id: int):
   
 @app.get("/standings/seasons/{season_id}")  
 async def standing(season_id: int):  
-    return await sportmonks_get(f"/standings/seasons/{season_id}")  
+    return await sportmonks_get(
+        f"/standings/seasons/{season_id}",
+        {"Include": "participant;rule.type;details.type;form;stage;league;group"}
+    )  
   
 @app.get("/teams/{team_id}")  
 async def team(team_id: int):  
@@ -68,9 +71,9 @@ async def team(team_id: int):
 async def fixture(fixture_id: int):  
     return await sportmonks_get(  
         f"/fixtures/{fixture_id}",  
-        {"include": "participants;scores;events;lineups;state;periods;formations;statistics.type;venue;league;season;stage;round"}  
+        {"include": "participants;scores;events.type;events.period;events.player;xGFixture.type;lineups.player;lineups.type;lineups.xGlineup.type;lineups.details.type;state;periods;formations;statistics.type;venue;league;season;stage;round;coaches;predictions.type"}  
     )  
-  
+    
 # top score  
   
 @app.get("/topscorers/seasons/{season_id}")  
