@@ -37,6 +37,7 @@ async def benner():
         "link": "https://scorpio99.net/afya"
     }
     
+    
 @app.get("/leagues/{league_id}")  
 async def league(league_id: int):  
     return await sportmonks_get(  
