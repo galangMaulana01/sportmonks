@@ -15,13 +15,17 @@
 
     <div class="space-y-4">
 
-        <input id="image_benner"
-               class="w-full border rounded-xl p-3"
-               placeholder="Image Banner">
+        <label>Banner</label>
+<input type="file"
+       id="image_benner"
+       class="w-full border rounded-xl p-3"
+       accept="image/*">
 
-        <input id="image_logo"
-               class="w-full border rounded-xl p-3"
-               placeholder="Image Logo">
+<label>Logo</label>
+<input type="file"
+       id="image_logo"
+       class="w-full border rounded-xl p-3"
+       accept="image/*">
 
         <textarea id="desc"
                   class="w-full border rounded-xl p-3"
@@ -39,28 +43,54 @@
     </div>
 
 </div>
-
+<script>
+    let bannerUrl = "";
+    let logoUrl = "";
+</script>
 <script>
 
 async function loadBanner() {
     const res = await fetch("/benner");
     const data = await res.json();
-
-    image_benner.value = data.image_benner;
-    image_logo.value = data.image_logo;
+    
+    bannerUrl = data.image_benner;
+    logoUrl = data.image_logo;
+    
     desc.value = data.desc;
     link.value = data.link;
 }
 
-async function saveBanner() {
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const res = await fetch("/admin/upload", {
+        method: "POST",
+        body: formData
+    });
+    
+    const data = await res.json();
+    
+    return data.url;
+}
 
+async function saveBanner() {
+    
+    if (image_benner.files.length > 0) {
+        bannerUrl = await uploadFile(image_benner.files[0]);
+    }
+    
+    if (image_logo.files.length > 0) {
+        logoUrl = await uploadFile(image_logo.files[0]);
+    }
+    
     const payload = {
-        image_benner: image_benner.value,
-        image_logo: image_logo.value,
+        image_benner: bannerUrl,
+        image_logo: logoUrl,
         desc: desc.value,
         link: link.value
     };
-
+    
     const res = await fetch("/admin/benner", {
         method: "POST",
         headers: {
@@ -68,9 +98,9 @@ async function saveBanner() {
         },
         body: JSON.stringify(payload)
     });
-
+    
     const data = await res.json();
-
+    
     if (data.success) {
         alert("Banner berhasil disimpan");
     }

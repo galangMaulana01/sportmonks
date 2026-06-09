@@ -1,12 +1,21 @@
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, Query, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware  
 import httpx  
 import os  
 from datetime import date  
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+import cloudinary
+import cloudinary.uploader
 
 app = FastAPI()  
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 banner_data = {
     "image_benner": "https://abc.com/banner.png",
@@ -62,6 +71,19 @@ async def update_banner(data: Banner):
         "success": True,
         "data": banner_data
     }
+
+@app.post("/admin/upload")
+async def upload_image(file: UploadFile = File(...)):
+    result = cloudinary.uploader.upload(
+        file.file,
+        folder="bolaindo"
+    )
+
+    return {
+        "success": True,
+        "url": result["secure_url"]
+    }
+    
 
 @app.get("/leagues/{league_id}")  
 async def league(league_id: int):  
