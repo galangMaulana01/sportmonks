@@ -28,12 +28,12 @@ async def sportmonks_get(path: str, params: dict = {}):
 async def root():  
     return {"message": "active"}  
   
-@app.get("/hit")
-async def hit():
+@app.get("/benner")
+async def benner():
     return {
-        "image_url": "https://abc.com/logo.png",
-        "nama_provider": "Provider Baru",
-        "decs": "ajy mabar",
+        "image_benner": "https://abc.com/banner.png",
+        "image_logo": "https://abc.com/logo.png",
+        "desc": "ajy mabar",
         "link": "https://providerbaru.com"
     }
     
