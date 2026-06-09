@@ -33,8 +33,8 @@ async def benner():
     return {
         "image_benner": "https://abc.com/banner.png",
         "image_logo": "https://abc.com/logo.png",
-        "desc": "ajy mabar",
-        "link": "https://providerbaru.com"
+        "desc": "Dapat kan free bet dengan mendaftar melalui apk kami",
+        "link": "https://scorpio99.net/afya"
     }
     
 @app.get("/leagues/{league_id}")  
