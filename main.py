@@ -7,22 +7,22 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import cloudinary
 import cloudinary.uploader
+from motor.motor_asyncio import AsyncIOMotorClient
+
 
 app = FastAPI()  
 
+MONGODB_URI = os.getenv("MONGODB_URI")
+
+mongo_client = AsyncIOMotorClient(MONGODB_URI)
+db = mongo_client["bolaindo"]
+settings_collection = db["settings"]
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
     api_secret=os.getenv("CLOUDINARY_API_SECRET"),
     secure=True
 )
-
-banner_data = {
-    "image_benner": "https://abc.com/banner.png",
-    "image_logo": "https://abc.com/logo.png",
-    "desc": "Dapat kan free bet dengan mendaftar melalui apk kami",
-    "link": "https://scorpio99.net/afya"
-}
 
 app.add_middleware(  
     CORSMiddleware,  
@@ -54,7 +54,21 @@ async def root():
   
 @app.get("/benner")
 async def benner():
-    return banner_data
+
+    banner = await settings_collection.find_one(
+        {"type": "banner"},
+        {"_id": 0}
+    )
+
+    if banner:
+        return banner
+
+    return {
+        "image_benner": "",
+        "image_logo": "",
+        "desc": "",
+        "link": ""
+    }
     
 @app.get("/admin")
 async def admin():
@@ -63,13 +77,21 @@ async def admin():
 
 @app.post("/admin/benner")
 async def update_banner(data: Banner):
-    global banner_data
 
-    banner_data = data.dict()
+    payload = {
+        "type": "banner",
+        **data.dict()
+    }
+
+    await settings_collection.update_one(
+        {"type": "banner"},
+        {"$set": payload},
+        upsert=True
+    )
 
     return {
         "success": True,
-        "data": banner_data
+        "data": payload
     }
 
 @app.post("/admin/upload")
