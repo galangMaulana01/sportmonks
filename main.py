@@ -1,11 +1,20 @@
-from fastapi import FastAPI, Query  
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware  
 import httpx  
 import os  
 from datetime import date  
-  
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
 app = FastAPI()  
-  
+
+banner_data = {
+    "image_benner": "https://abc.com/banner.png",
+    "image_logo": "https://abc.com/logo.png",
+    "desc": "Dapat kan free bet dengan mendaftar melalui apk kami",
+    "link": "https://scorpio99.net/afya"
+}
+
 app.add_middleware(  
     CORSMiddleware,  
     allow_origins=["*"],  
@@ -16,6 +25,12 @@ app.add_middleware(
   
 SPORTMONKS_TOKEN = os.getenv("SPORTMONKS_API_TOKEN")  
 BASE_URL = "https://api.sportmonks.com/v3/football"  
+  
+class Banner(BaseModel):
+    image_benner: str
+    image_logo: str
+    desc: str
+    link: str
   
 async def sportmonks_get(path: str, params: dict = {}):  
     params["api_token"] = SPORTMONKS_TOKEN  
@@ -30,14 +45,24 @@ async def root():
   
 @app.get("/benner")
 async def benner():
+    return banner_data
+    
+@app.get("/admin")
+async def admin():
+    return FileResponse("src/index.html")
+
+
+@app.post("/admin/benner")
+async def update_banner(data: Banner):
+    global banner_data
+
+    banner_data = data.dict()
+
     return {
-        "image_benner": "https://abc.com/banner.png",
-        "image_logo": "https://abc.com/logo.png",
-        "desc": "Dapat kan free bet dengan mendaftar melalui apk kami",
-        "link": "https://scorpio99.net/afya"
+        "success": True,
+        "data": banner_data
     }
-    
-    
+
 @app.get("/leagues/{league_id}")  
 async def league(league_id: int):  
     return await sportmonks_get(  
