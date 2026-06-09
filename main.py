@@ -28,6 +28,15 @@ async def sportmonks_get(path: str, params: dict = {}):
 async def root():  
     return {"message": "active"}  
   
+@app.get("/hit")
+async def hit():
+    return {
+        "image_url": "https://abc.com/logo.png",
+        "nama_provider": "Provider Baru",
+        "decs": "ajy mabar",
+        "link": "https://providerbaru.com"
+    }
+    
 @app.get("/leagues/{league_id}")  
 async def league(league_id: int):  
     return await sportmonks_get(  
@@ -80,20 +89,3 @@ async def fixture(fixture_id: int):
         f"/fixtures/{fixture_id}",  
         {"include": "participants;league;venue;state;scores;lineups.player;lineups.type;lineups.details.type;metadata.type;coaches;events.type;events.period;events.player;statistics.type;sidelined.sideline.player;sidelined.sideline.type"}
     )
-
-# top score  
-  
-@app.get("/topscorers/seasons/{season_id}")  
-async def topscorers_season(season_id: int):  
-    return await sportmonks_get(f"/topscorers/seasons/{season_id}")  
-  
-# schedule  
-  
-@app.get("/schedules/seasons/{season_id}")  
-async def schedule_by_season(season_id: int):  
-    return await sportmonks_get(f"/schedules/seasons/{season_id}")  
-  
-@app.get("/schedules/teams/{team_id}")  
-async def schedule_by_team(team_id: int):  
-    return await sportmonks_get(f"/schedules/teams/{team_id}")  
-    
