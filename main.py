@@ -62,7 +62,7 @@ async def standing(season_id: int):
         f"/standings/seasons/{season_id}",
         {"Include": "participant;rule.type;details.type;form;stage;league;group"}
     )  
-  
+    
 @app.get("/teams/{team_id}")  
 async def team(team_id: int):  
     return await sportmonks_get(f"/teams/{team_id}")  
