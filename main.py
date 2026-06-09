@@ -74,7 +74,23 @@ async def benner():
 async def admin():
     return FileResponse("src/index.html")
 
-
+@app.get("/db-check")
+async def check_db_connection():
+    try:
+        # Kirim perintah 'ping' ke MongoDB buat mastiin koneksi jalan
+        await mongo_client.admin.command('ping')
+        
+        return {
+            "status": "success", 
+            "message": "Mantap bro, Database MongoDB berhasil connect!"
+        }
+    except Exception as e:
+        # Kalau gagal connect, bakal return error 500 beserta pesan error aslinya
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Waduh, Database gagal connect bro: {str(e)}"
+        )
+        
 @app.post("/admin/benner")
 async def update_banner(data: Banner):
 
