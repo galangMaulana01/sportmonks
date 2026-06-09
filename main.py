@@ -4,13 +4,12 @@ import httpx
 import os
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 app = FastAPI()
 
-# =========================
+# ======================
 # CORS
-# =========================
+# ======================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,46 +18,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
-# ENV
-# =========================
+# ======================
+# CONFIG
+# ======================
 SPORTMONKS_TOKEN = os.getenv("SPORTMONKS_API_TOKEN")
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-
 BASE_URL = "https://api.sportmonks.com/v3/football"
 
-# =========================
-# MONGO SETUP
-# =========================
+MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.sportcache
 
-# =========================
-# SCHEDULER
-# =========================
-scheduler = AsyncIOScheduler()
 
-# =========================
-# SPORTMONKS REQUEST
-# =========================
+# ======================
+# HTTP CLIENT
+# ======================
 async def sportmonks_get(path: str, params: dict = None):
     if params is None:
         params = {}
 
     params["api_token"] = SPORTMONKS_TOKEN
 
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=20) as client:
         r = await client.get(f"{BASE_URL}{path}", params=params)
         r.raise_for_status()
         return r.json()
 
-# =========================
-# CACHE HELPERS
-# =========================
-async def get_cache(key: str):
-    return await db.cache_data.find_one({"key": key})
 
-
+# ======================
+# MONGO CACHE
+# ======================
 async def set_cache(key: str, data: dict):
     await db.cache_data.update_one(
         {"key": key},
@@ -72,16 +60,22 @@ async def set_cache(key: str, data: dict):
         upsert=True
     )
 
-# =========================
+
+async def get_cache(key: str):
+    return await db.cache_data.find_one({"key": key})
+
+
+# ======================
 # ROOT
-# =========================
+# ======================
 @app.get("/")
 async def root():
-    return {"message": "active"}
+    return {"message": "API active"}
 
-# =========================
+
+# =========================================================
 # LEAGUES
-# =========================
+# =========================================================
 @app.get("/leagues/{league_id}")
 async def league(league_id: int):
     key = f"league_{league_id}"
@@ -98,9 +92,10 @@ async def league(league_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # SEASONS
-# =========================
+# =========================================================
 @app.get("/seasons/{season_id}")
 async def season(season_id: int):
     key = f"season_{season_id}"
@@ -117,9 +112,10 @@ async def season(season_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # STAGES
-# =========================
+# =========================================================
 @app.get("/stages/{stage_id}")
 async def stage(stage_id: int):
     key = f"stage_{stage_id}"
@@ -136,9 +132,10 @@ async def stage(stage_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # ROUNDS
-# =========================
+# =========================================================
 @app.get("/rounds/{round_id}")
 async def round(round_id: int):
     key = f"round_{round_id}"
@@ -155,29 +152,27 @@ async def round(round_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # STANDINGS
-# =========================
-@app.get("/standings/seasons/{season_id}")
-async def standing(season_id: int):
+# =========================================================
+@app.get("/standings/{season_id}")
+async def standings(season_id: int):
     key = f"standings_{season_id}"
 
     cache = await get_cache(key)
     if cache:
-        return {
-            "source": "cache",
-            "updated_at": cache["updated_at"],
-            "data": cache["data"]
-        }
+        return {"source": "cache", "data": cache["data"]}
 
     data = await sportmonks_get(f"/standings/seasons/{season_id}")
 
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # TEAMS
-# =========================
+# =========================================================
 @app.get("/teams/{team_id}")
 async def team(team_id: int):
     key = f"team_{team_id}"
@@ -191,9 +186,10 @@ async def team(team_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
-# FIXTURES
-# =========================
+
+# =========================================================
+# FIXTURES (FULL DETAIL)
+# =========================================================
 @app.get("/fixtures/{fixture_id}")
 async def fixture(fixture_id: int):
     key = f"fixture_{fixture_id}"
@@ -212,11 +208,12 @@ async def fixture(fixture_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # TOP SCORERS
-# =========================
-@app.get("/topscorers/seasons/{season_id}")
-async def topscorers_season(season_id: int):
+# =========================================================
+@app.get("/topscorers/{season_id}")
+async def topscorers(season_id: int):
     key = f"topscorers_{season_id}"
 
     cache = await get_cache(key)
@@ -228,11 +225,12 @@ async def topscorers_season(season_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
+
+# =========================================================
 # SCHEDULES
-# =========================
+# =========================================================
 @app.get("/schedules/seasons/{season_id}")
-async def schedule_by_season(season_id: int):
+async def schedule_season(season_id: int):
     key = f"schedule_season_{season_id}"
 
     cache = await get_cache(key)
@@ -246,7 +244,7 @@ async def schedule_by_season(season_id: int):
 
 
 @app.get("/schedules/teams/{team_id}")
-async def schedule_by_team(team_id: int):
+async def schedule_team(team_id: int):
     key = f"schedule_team_{team_id}"
 
     cache = await get_cache(key)
@@ -258,25 +256,41 @@ async def schedule_by_team(team_id: int):
     await set_cache(key, data)
     return {"source": "api", "data": data}
 
-# =========================
-# BACKGROUND SYNC (12 JAM)
-# =========================
-async def sync_data():
+
+# =========================================================
+# 🔥 INIT SYNC (BIAR DB LANGSUNG KEISI)
+# =========================================================
+async def sync_all():
+    print("SYNC START...")
+
     season_ids = [2023, 2024]
 
     for season_id in season_ids:
-        try:
-            data = await sportmonks_get(f"/standings/seasons/{season_id}")
-            await set_cache(f"standings_{season_id}", data)
-        except Exception as e:
-            print("sync error:", e)
 
-    print("SYNC DONE:", datetime.utcnow())
+        standings = await sportmonks_get(f"/standings/seasons/{season_id}")
+        await set_cache(f"standings_{season_id}", standings)
 
-# =========================
-# STARTUP
-# =========================
+        topscorers = await sportmonks_get(f"/topscorers/seasons/{season_id}")
+        await set_cache(f"topscorers_{season_id}", topscorers)
+
+        fixtures = await sportmonks_get(f"/fixtures/date/2026-06-09")
+        await set_cache(f"fixtures_{season_id}", fixtures)
+
+    print("SYNC DONE")
+
+
+# =========================================================
+# STARTUP AUTO SYNC
+# =========================================================
 @app.on_event("startup")
 async def startup():
-    scheduler.add_job(sync_data, "interval", hours=12)
-    scheduler.start()
+    await sync_all()
+
+
+# =========================================================
+# MANUAL SYNC
+# =========================================================
+@app.get("/sync-now")
+async def sync_now():
+    await sync_all()
+    return {"message": "sync completed"}
