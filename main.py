@@ -63,6 +63,13 @@ async def standing(season_id: int):
         {"include": "participant;rule.type;details.type;form;stage;league;group"}
     )  
     
+@app.get("/squads/seasons/{season_id}/teams/{team_id}")
+async def squads(season_id: int,team_id: int):  
+    return await sportmonks_get(
+        f"/squads/seasons/{season_id}/teams/{team_id}",
+        {"include": "team;player.nationality;details.type;player.position"}
+    )  
+    
 @app.get("/teams/{team_id}")  
 async def team(team_id: int):  
     return await sportmonks_get(f"/teams/{team_id}")  
