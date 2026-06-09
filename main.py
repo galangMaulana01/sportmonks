@@ -71,7 +71,7 @@ async def team(team_id: int):
 async def fixture(fixture_id: int):  
     return await sportmonks_get(  
         f"/fixtures/{fixture_id}",  
-        {"include": "participants,scores,events.type,events.period,events.player,lineups.player,lineups.type,state,periods,formations,statistics.type,venue,league,season,stage,round"}  
+        {"include": "participants,scores,events,state,league,season,venue"}
     )
     
 # top score  
