@@ -2,13 +2,14 @@ from fastapi import FastAPI, Query, Request, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware  
 import httpx  
 import os  
-from datetime import date  
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import cloudinary
 import cloudinary.uploader
 from motor.motor_asyncio import AsyncIOMotorClient
-
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from datetime import date, datetime
 
 app = FastAPI()  
 
@@ -16,7 +17,9 @@ MONGODB_URI = os.getenv("MONGODB_URI")
 
 mongo_client = AsyncIOMotorClient(MONGODB_URI)
 db = mongo_client["bolaindo"]
+
 settings_collection = db["settings"]
+users_collection = db["users"]
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
@@ -35,6 +38,9 @@ app.add_middleware(
 SPORTMONKS_TOKEN = os.getenv("SPORTMONKS_API_TOKEN")  
 BASE_URL = "https://api.sportmonks.com/v3/football"  
   
+class GoogleLogin(BaseModel):
+    id_token: str
+    
 class Banner(BaseModel):
     image_benner: str
     image_logo: str
@@ -175,3 +181,75 @@ async def fixture(fixture_id: int):
         f"/fixtures/{fixture_id}",  
         {"include": "participants;league;venue;state;scores;lineups.player;lineups.type;lineups.details.type;metadata.type;coaches;events.type;events.period;events.player;statistics.type;sidelined.sideline.player;sidelined.sideline.type"}
     )
+
+@app.post("/auth/google")
+async def google_login(data: GoogleLogin, request: Request):
+
+    try:
+        info = id_token.verify_oauth2_token(
+            data.id_token,
+            requests.Request(),
+            os.getenv("GOOGLE_CLIENT_ID")
+        )
+
+        client_ip = (
+            request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+            or request.client.host
+        )
+
+        user = {
+            "google_id": info["sub"],
+            "email": info["email"],
+            "name": info.get("name"),
+            "created_at": datetime.utcnow(),
+            "last_login": datetime.utcnow(),
+            "ip": client_ip
+        }
+
+        await users_collection.update_one(
+            {"google_id": user["google_id"]},
+            {
+                "$set": {
+                    "email": user["email"],
+                    "name": user["name"],
+                    "last_login": user["last_login"],
+                    "ip": user["ip"]
+                },
+                "$setOnInsert": {
+                    "created_at": user["created_at"],
+                    "google_id": user["google_id"]
+                }
+            },
+            upsert=True
+        )
+
+        return {
+            "success": True,
+            "user": {
+                "google_id": user["google_id"],
+                "email": user["email"],
+                "name": user["name"]
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Login Google gagal: {str(e)}"
+        )
+@app.get("/admin/users")
+async def admin_users():
+
+    users = []
+
+    async for user in users_collection.find(
+        {},
+        {"_id": 0}
+    ).sort("last_login", -1):
+
+        users.append(user)
+
+    return {
+        "success": True,
+        "users": users
+    }

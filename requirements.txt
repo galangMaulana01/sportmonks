@@ -4,3 +4,5 @@ httpx
 cloudinary
 python-multipart
 motor
+google-auth
+PyJWT

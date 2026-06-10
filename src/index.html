@@ -120,6 +120,47 @@
         <div class="text-center mt-5 text-xs text-gray-400">
             Perubahan akan langsung tampil di halaman publik
         </div>
+        <div class="mt-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+    <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="text-lg font-medium text-gray-800">
+            Pengguna Terdaftar
+        </h2>
+
+        <p class="text-xs text-gray-400 mt-1">
+            Akun Google yang pernah login
+        </p>
+    </div>
+
+    <div class="overflow-x-auto">
+
+        <table class="w-full text-sm">
+
+            <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 text-left">Nama</th>
+                    <th class="px-4 py-3 text-left">Email</th>
+                    <th class="px-4 py-3 text-left">IP</th>
+                    <th class="px-4 py-3 text-left">Login Terakhir</th>
+                </tr>
+            </thead>
+
+            <tbody id="usersTable">
+
+                <tr>
+                    <td colspan="4"
+                        class="px-4 py-6 text-center text-gray-400">
+                        Memuat pengguna...
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
     </div>
 
 <script>
@@ -265,6 +306,68 @@
     // jalankan
     loadBanner();
 </script>
+<script type="text/javascript" charset="utf-8">
+    async function loadUsers() {
+    
+    try {
+        
+        const res = await fetch("/admin/users");
+        const data = await res.json();
+        
+        const tbody = document.getElementById("usersTable");
+        
+        if (!data.users || data.users.length === 0) {
+            
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                        class="px-4 py-6 text-center text-gray-400">
+                        Belum ada pengguna
+                    </td>
+                </tr>
+            `;
+            
+            return;
+        }
+        
+        tbody.innerHTML = data.users.map(user => `
+            <tr class="border-t border-gray-100">
 
+                <td class="px-4 py-3 font-medium text-gray-800">
+                    ${user.name || "-"}
+                </td>
+
+                <td class="px-4 py-3 text-gray-600">
+                    ${user.email || "-"}
+                </td>
+
+                <td class="px-4 py-3 text-gray-600">
+                    ${user.ip || "-"}
+                </td>
+
+                <td class="px-4 py-3 text-gray-600">
+                    ${user.last_login || "-"}
+                </td>
+
+            </tr>
+        `).join("");
+        
+    } catch (err) {
+        
+        document.getElementById("usersTable").innerHTML = `
+            <tr>
+                <td colspan="4"
+                    class="px-4 py-6 text-center text-red-500">
+                    Gagal memuat pengguna
+                </td>
+            </tr>
+        `;
+        
+        console.error(err);
+    }
+}
+
+loadUsers();
+</script>
 </body>
 </html>
