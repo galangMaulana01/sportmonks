@@ -10,6 +10,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from datetime import date, datetime
+from fastapi.responses import RedirectResponse
+import secrets
 
 app = FastAPI()  
 
@@ -254,15 +256,108 @@ async def admin_users():
         "users": users
     }
     
+# ==================== GOOGLE OAUTH SERVER-SIDE FLOW ====================
+
 @app.get("/auth/google/login")
-async def google_login_redirect():
+async def google_login_redirect(request: Request):
+    """Redirect user ke Google OAuth (fallback jika One Tap gagal)"""
+    # Simpan state untuk mencegah CSRF
+    state = secrets.token_urlsafe(32)
+    # Simpan di session/cookie sederhana (kita pakai memory sederhana, atau bisa pakai Redis/DB)
+    # Untuk sederhana, kita kirim sebagai query param di redirect_uri
+    
     google_auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
         f"?client_id={os.getenv('GOOGLE_CLIENT_ID')}"
         "&response_type=code"
         "&scope=openid%20email%20profile"
-        "&redirect_uri=https://sportmonks-tawny.vercel.app/auth/google/callback"
+        f"&redirect_uri=https://sportmonks-tawny.vercel.app/auth/google/callback"
         "&access_type=offline"
         "&prompt=select_account"
+        f"&state={state}"
     )
     return RedirectResponse(url=google_auth_url)
+
+
+@app.get("/auth/google/callback")
+async def google_login_callback(code: str, request: Request):
+    """Callback dari Google, menukar code dengan token"""
+    try:
+        # Tukar authorization code dengan token
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+                    "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),  # Pastikan ini ada di env!
+                    "redirect_uri": "https://sportmonks-tawny.vercel.app/auth/google/callback",
+                    "grant_type": "authorization_code"
+                }
+            )
+            token_data = token_response.json()
+            
+            if "error" in token_data:
+                raise HTTPException(status_code=400, detail=f"Google token error: {token_data.get('error_description', token_data['error'])}")
+            
+            id_token_jwt = token_data.get("id_token")
+            if not id_token_jwt:
+                raise HTTPException(status_code=400, detail="No id_token received")
+            
+            # Verifikasi ID Token
+            info = id_token.verify_oauth2_token(
+                id_token_jwt,
+                requests.Request(),
+                os.getenv("GOOGLE_CLIENT_ID")
+            )
+            
+            client_ip = (
+                request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+                or request.client.host
+            )
+            
+            user = {
+                "google_id": info["sub"],
+                "email": info["email"],
+                "name": info.get("name"),
+                "created_at": datetime.utcnow(),
+                "last_login": datetime.utcnow(),
+                "ip": client_ip
+            }
+            
+            await users_collection.update_one(
+                {"google_id": user["google_id"]},
+                {
+                    "$set": {
+                        "email": user["email"],
+                        "name": user["name"],
+                        "last_login": user["last_login"],
+                        "ip": user["ip"]
+                    },
+                    "$setOnInsert": {
+                        "created_at": user["created_at"],
+                        "google_id": user["google_id"]
+                    }
+                },
+                upsert=True
+            )
+            
+            # Redirect ke frontend dengan data user di query param (encoded)
+            import json
+            from urllib.parse import urlencode
+            
+            user_data = {
+                "google_id": user["google_id"],
+                "email": user["email"],
+                "name": user["name"]
+            }
+            
+            # Simpan ke localStorage via redirect dengan hash fragment
+            # Frontend akan menangkap ini
+            frontend_url = f"https://indoscore.vercel.app/#auth_success={json.dumps(user_data)}"
+            return RedirectResponse(url=frontend_url)
+            
+    except Exception as e:
+        # Redirect ke frontend dengan error
+        error_msg = str(e)
+        return RedirectResponse(url=f"https://indoscore.vercel.app/#auth_error={error_msg[:100]}")
