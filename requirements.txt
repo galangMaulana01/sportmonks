@@ -6,3 +6,4 @@ python-multipart
 motor
 google-auth
 PyJWT
+requests
