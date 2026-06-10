@@ -253,3 +253,16 @@ async def admin_users():
         "success": True,
         "users": users
     }
+    
+@app.get("/auth/google/login")
+async def google_login_redirect():
+    google_auth_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        f"?client_id={os.getenv('GOOGLE_CLIENT_ID')}"
+        "&response_type=code"
+        "&scope=openid%20email%20profile"
+        "&redirect_uri=https://sportmonks-tawny.vercel.app/auth/google/callback"
+        "&access_type=offline"
+        "&prompt=select_account"
+    )
+    return RedirectResponse(url=google_auth_url)
