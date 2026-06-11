@@ -5,5 +5,6 @@ cloudinary
 python-multipart
 motor
 google-auth
+google-auth-oauthlib
 PyJWT
 requests
