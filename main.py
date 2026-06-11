@@ -12,7 +12,8 @@ from google.auth.transport import requests
 from datetime import date, datetime
 from fastapi.responses import RedirectResponse
 import secrets
-
+import json
+import urllib.parse
 app = FastAPI()  
 
 MONGODB_URI = os.getenv("MONGODB_URI")
@@ -342,22 +343,47 @@ async def google_login_callback(code: str, request: Request):
                 upsert=True
             )
             
-            # Redirect ke frontend dengan data user di query param (encoded)
-            import json
-            from urllib.parse import urlencode
-            
             user_data = {
                 "google_id": user["google_id"],
                 "email": user["email"],
                 "name": user["name"]
             }
-            
-            # Simpan ke localStorage via redirect dengan hash fragment
-            # Frontend akan menangkap ini
-            frontend_url = f"https://indoscore.vercel.app/#auth_success={json.dumps(user_data)}"
+
+            user_json = urllib.parse.quote(json.dumps(user_data))
+            frontend_url = f"capacitor://localhost/#auth_success={user_json}"
             return RedirectResponse(url=frontend_url)
-            
+
     except Exception as e:
-        # Redirect ke frontend dengan error
         error_msg = str(e)
-        return RedirectResponse(url=f"https://indoscore.vercel.app/#auth_error={error_msg[:100]}")
+        return RedirectResponse(url=f"capacitor://localhost/#auth_error={error_msg[:100]}")
+        
+class NativeGoogleUser(BaseModel):
+    google_id: str
+    email: str
+    name: str
+
+@app.post("/auth/google-native")
+async def google_native_login(data: NativeGoogleUser, request: Request):
+    client_ip = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or request.client.host
+    )
+    
+    await users_collection.update_one(
+        {"google_id": data.google_id},
+        {
+            "$set": {
+                "email": data.email,
+                "name": data.name,
+                "last_login": datetime.utcnow(),
+                "ip": client_ip
+            },
+            "$setOnInsert": {
+                "created_at": datetime.utcnow(),
+                "google_id": data.google_id
+            }
+        },
+        upsert=True
+    )
+    
+    return {"success": True, "user": {"google_id": data.google_id, "email": data.email, "name": data.name}}
