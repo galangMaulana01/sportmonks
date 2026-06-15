@@ -176,7 +176,10 @@ async def squads(season_id: int,team_id: int):
     
 @app.get("/teams/{team_id}")  
 async def team(team_id: int):  
-    return await sportmonks_get(f"/teams/{team_id}")  
+    return await sportmonks_get(
+        f"/teams/{team_id}",
+        {"include": "venue"}
+    )  
   
 @app.get("/fixtures/{fixture_id}")  
 async def fixture(fixture_id: int):  
