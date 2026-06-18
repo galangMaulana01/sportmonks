@@ -37,30 +37,30 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"],  
 )  
-  
+   
 SPORTMONKS_TOKEN = os.getenv("SPORTMONKS_API_TOKEN")  
 BASE_URL = "https://api.sportmonks.com/v3/football"  
-  
+   
 class GoogleLogin(BaseModel):
     id_token: str
-    
+     
 class Banner(BaseModel):
     image_benner: str
     image_logo: str
     desc: str
     link: str
-  
+   
 async def sportmonks_get(path: str, params: dict = {}):  
     params["api_token"] = SPORTMONKS_TOKEN  
     async with httpx.AsyncClient(timeout=15) as client:  
         r = await client.get(f"{BASE_URL}{path}", params=params)  
         r.raise_for_status()  
         return r.json()  
-  
+   
 @app.get("/")  
 async def root():  
     return {"message": "active"}  
-  
+   
 @app.get("/benner")
 async def benner():
 
@@ -78,7 +78,7 @@ async def benner():
         "desc": "",
         "link": ""
     }
-    
+     
 @app.get("/admin")
 async def admin():
     return FileResponse("src/index.html")
@@ -138,49 +138,49 @@ async def league(league_id: int):
         f"/leagues/{league_id}",  
         {"include": "currentSeason;country"}  
     )  
-  
+   
 @app.get("/seasons/{season_id}")  
 async def season(season_id: int):  
     return await sportmonks_get(  
         f"/seasons/{season_id}",  
         {"include": "stages;currentStage"}  
     )  
-  
+   
 @app.get("/stages/{stage_id}")  
 async def stage(stage_id: int):  
     return await sportmonks_get(  
         f"/stages/{stage_id}",  
         {"include": "rounds;currentRound"}  
     )  
-  
+   
 @app.get("/rounds/{round_id}")  
 async def round(round_id: int):  
     return await sportmonks_get(  
         f"/rounds/{round_id}",  
         {"include": "fixtures"}  
     )  
-  
+   
 @app.get("/standings/seasons/{season_id}")  
 async def standing(season_id: int):  
     return await sportmonks_get(
         f"/standings/seasons/{season_id}",
         {"include": "participant;rule.type;details.type;form;stage;league;group"}
     )  
-    
+     
 @app.get("/squads/seasons/{season_id}/teams/{team_id}")
 async def squads(season_id: int,team_id: int):  
     return await sportmonks_get(
         f"/squads/seasons/{season_id}/teams/{team_id}",
         {"include": "team;player.nationality;details.type;player.position"}
     )  
-    
+     
 @app.get("/teams/{team_id}")  
 async def team(team_id: int):  
     return await sportmonks_get(
         f"/teams/{team_id}",
         {"include": "venue"}
     )  
-  
+   
 @app.get("/fixtures/{fixture_id}")  
 async def fixture(fixture_id: int):  
     return await sportmonks_get(  
@@ -188,6 +188,73 @@ async def fixture(fixture_id: int):
         {"include": "participants;league;venue;state;scores;lineups.player;lineups.type;lineups.details.type;metadata.type;coaches;events.type;events.period;events.player;statistics.type;sidelined.sideline.player;sidelined.sideline.type"}
     )
 
+# New endpoints for v3 as per request
+
+@app.get("/players/search/{query}")
+async def search_players(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
+    params = {}
+    if include:
+        params["include"] = include
+    params["page"] = page
+    params["per_page"] = per_page
+    return await sportmonks_get(f"/players/search/{query}", params)
+
+@app.get("/teams/search/{query}")
+async def search_teams(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
+    params = {}
+    if include:
+        params["include"] = include
+    params["page"] = page
+    params["per_page"] = per_page
+    return await sportmonks_get(f"/teams/search/{query}", params)
+
+@app.get("/leagues/search/{query}")
+async def search_leagues(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
+    params = {}
+    if include:
+        params["include"] = include
+    params["page"] = page
+    params["per_page"] = per_page
+    return await sportmonks_get(f"/leagues/search/{query}", params)
+
+@app.get("/fixtures/date/{date}")
+async def fixtures_by_date(date: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
+    params = {}
+    if include:
+        params["include"] = include
+    params["page"] = page
+    params["per_page"] = per_page
+    return await sportmonks_get(f"/fixtures/date/{date}", params)
+
+@app.get("/livescores/inplay")
+async def livescores_inplay(include: str = Query(None)):
+    params = {}
+    if include:
+        params["include"] = include
+    return await sportmonks_get("/livescores/inplay", params)
+
+@app.get("/squads/teams/{team_id}")
+async def squads_by_team(team_id: int, include: str = Query(None)):
+    params = {}
+    if include:
+        params["include"] = include
+    return await sportmonks_get(f"/squads/teams/{team_id}", params)
+
+@app.get("/standings/live/leagues/{league_id}")
+async def live_standings(league_id: int, include: str = Query(None)):
+    params = {}
+    if include:
+        params["include"] = include
+    return await sportmonks_get(f"/standings/live/leagues/{league_id}", params)
+
+@app.get("/topscorers/seasons/{season_id}")
+async def topscorers(season_id: int, include: str = Query(None)):
+    params = {}
+    if include:
+        params["include"] = include
+    return await sportmonks_get(f"/topscorers/seasons/{season_id}", params)
+
+# Keep other auth endpoints etc.
 @app.post("/auth/google")
 async def google_login(data: GoogleLogin, request: Request):
 
@@ -259,7 +326,7 @@ async def admin_users():
         "success": True,
         "users": users
     }
-    
+     
 # ==================== GOOGLE OAUTH SERVER-SIDE FLOW ====================
 
 @app.get("/auth/google/login")
