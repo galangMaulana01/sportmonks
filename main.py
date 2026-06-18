@@ -188,6 +188,12 @@ async def fixture(fixture_id: int):
         {"include": "participants;league;venue;state;scores;lineups.player;lineups.type;lineups.details.type;metadata.type;coaches;events.type;events.period;events.player;statistics.type;sidelined.sideline.player;sidelined.sideline.type"}
     )
 
+@app.get("/livescores/inplay")
+async def livescores_inplay(include: str = Query(None)):
+    return await sportmonks_get(
+        "/livescores/inplay",
+        {"include": "participants;league;venue"}
+    )
 # New endpoints for v3 as per request
 
 @app.get("/players/search/{query}")
@@ -226,12 +232,6 @@ async def fixtures_by_date(date: str, include: str = Query(None), page: int = Qu
     params["per_page"] = per_page
     return await sportmonks_get(f"/fixtures/date/{date}", params)
 
-@app.get("/livescores/inplay")
-async def livescores_inplay(include: str = Query(None)):
-    params = {}
-    if include:
-        params["include"] = include
-    return await sportmonks_get("/livescores/inplay", params)
 
 @app.get("/squads/teams/{team_id}")
 async def squads_by_team(team_id: int, include: str = Query(None)):
