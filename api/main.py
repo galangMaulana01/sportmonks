@@ -224,10 +224,10 @@ async def search_teams(
         
     return await sportmonks_get(f"/teams/search/{query}", params)
 
-@app.get("/football/leagues")  
+@app.get("/leagues")  
 async def get_all_leagues():  
     return await sportmonks_get(
-        f"/football/leagues"  
+        f"/leagues"
     )
     
 @app.get("/leagues/search/{query}")
