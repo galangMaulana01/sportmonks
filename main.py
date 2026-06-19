@@ -164,7 +164,7 @@ async def round(round_id: int):
 async def standing(season_id: int):  
     return await sportmonks_get(
         f"/standings/seasons/{season_id}",
-        {"include": "participant;details"}  
+        {"include": "participant;rule.type;details.type;form;stage;league;group"}  
     )
      
 @app.get("/squads/seasons/{season_id}/teams/{team_id}")
