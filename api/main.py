@@ -248,13 +248,12 @@ async def fixtures_by_date(date: str, include: str = Query(None), page: int = Qu
     params["per_page"] = per_page
     return await sportmonks_get(f"/fixtures/date/{date}", params)
 
-
 @app.get("/squads/teams/{team_id}")
-async def squads_by_team(team_id: int, include: str = Query(None)):
-    params = {}
-    if include:
-        params["include"] = include
-    return await sportmonks_get(f"/squads/teams/{team_id}", params)
+async def squads_by_team(team_id: int):
+    return await sportmonks_get(
+        f"/squads/teams/{team_id}",
+        {"include": "team;player.nationality;player.statistics.details.type;player.position"}
+    )
 
 @app.get("/standings/live/leagues/{league_id}")
 async def live_standings(league_id: int, include: str = Query(None)):
