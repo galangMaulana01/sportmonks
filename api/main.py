@@ -185,14 +185,14 @@ async def team(team_id: int):
 async def fixture(fixture_id: int):  
     return await sportmonks_get(  
         f"/fixtures/{fixture_id}",  
-        {"include": "participants;league;venue;state;scores;lineups.player;lineups.type;lineups.details.type;metadata.type;coaches;events.type;events.period;events.player;statistics.type;sidelined.sideline.player;sidelined.sideline.type"}
+        {"include": "participants;league;venue;state;scores;lineups.player;lineups.type;lineups.details.type;metadata.type;coaches;events.type;events.period;events.player;statistics.type;sidelined.sideline.player;sidelined.sideline.type;predictions.type"}
     )
 
 @app.get("/livescores/inplay")
 async def livescores_inplay(include: str = Query(None)):
     return await sportmonks_get(
         "/livescores/inplay",
-        {"include": "participants;league;venue"}
+        {"include": "participants;scores;periods;events;league.country;round;venue"}
     )
 # New endpoints for v3 as per request
 
@@ -269,7 +269,6 @@ async def topscorers(season_id: int, include: str = Query(None)):
         params["include"] = include
     return await sportmonks_get(f"/topscorers/seasons/{season_id}", params)
 
-# Keep other auth endpoints etc.
 @app.post("/auth/google")
 async def google_login(data: GoogleLogin, request: Request):
 
