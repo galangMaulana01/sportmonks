@@ -2,17 +2,17 @@
   "version": 2,
   "functions": {
     "main.py": {
-      "runtime": "python3.12"
+      "runtime": "@vercel/python"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/admin",
-      "dest": "/src/index.html"
+      "source": "/admin",
+      "destination": "/src/index.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/main.py"
+      "source": "/(.*)",
+      "destination": "/main.py"
     }
   ]
 }
