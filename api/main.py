@@ -205,14 +205,27 @@ async def search_players(query: str, include: str = Query(None), page: int = Que
     params["per_page"] = per_page
     return await sportmonks_get(f"/players/search/{query}", params)
 
+from fastapi import Query
+from typing import Optional
+
 @app.get("/teams/search/{query}")
-async def search_teams(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
-    params = {}
+async def search_teams(
+    query: str, 
+    include: Optional[str] = Query(None), 
+    page: int = Query(1), 
+    per_page: int = Query(25)
+):
+    params = {
+        "page": page,
+        "per_page": per_page
+    }
     if include:
         params["include"] = include
-    params["page"] = page
-    params["per_page"] = per_page
+        
+    # Catatan: Pastikan helper sportmonks_get lo udah nge-handle prefix '/football' 
+    # karena endpoint asli SportMonks adalah /football/teams/search/{name}
     return await sportmonks_get(f"/teams/search/{query}", params)
+
 
 @app.get("/leagues/search/{query}")
 async def search_leagues(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
