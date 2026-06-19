@@ -136,7 +136,7 @@ async def upload_image(file: UploadFile = File(...)):
 async def league(league_id: int):  
     return await sportmonks_get(  
         f"/leagues/{league_id}",  
-        {"include": "currentSeason;country"}  
+        {"include": "currentSeason;country;seasons"}  
     )  
    
 @app.get("/seasons/{season_id}")  
