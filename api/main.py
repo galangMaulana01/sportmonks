@@ -222,11 +222,14 @@ async def search_teams(
     if include:
         params["include"] = include
         
-    # Catatan: Pastikan helper sportmonks_get lo udah nge-handle prefix '/football' 
-    # karena endpoint asli SportMonks adalah /football/teams/search/{name}
     return await sportmonks_get(f"/teams/search/{query}", params)
 
-
+@app.get("/football/leagues")  
+async def get_all_leagues():  
+    return await sportmonks_get(
+        f"/football/leagues"  
+    )
+    
 @app.get("/leagues/search/{query}")
 async def search_leagues(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):
     params = {}
