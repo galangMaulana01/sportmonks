@@ -139,6 +139,13 @@ async def league(league_id: int):
         {"include": "currentSeason;country;seasons"}  
     )  
    
+@app.get("/standings/live/leagues/{league_id}")  
+async def standings_liga(league_id: int):  
+    return await sportmonks_get(  
+        f"/standings/live/leagues/{league_id}",  
+        {"include": "participant;rule.type;details.type;form;stage;league;group"}  
+    )
+    
 @app.get("/seasons/{season_id}")  
 async def season(season_id: int):  
     return await sportmonks_get(  
