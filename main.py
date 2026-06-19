@@ -159,13 +159,13 @@ async def round(round_id: int):
         f"/rounds/{round_id}",  
         {"include": "fixtures"}  
     )  
-   
+    
 @app.get("/standings/seasons/{season_id}")  
 async def standing(season_id: int):  
     return await sportmonks_get(
         f"/standings/seasons/{season_id}",
-        {"include": "participant;rule.type;details.type;form;stage;league;group"}
-    )  
+        {"include": "standings.participant;standings.details.type;standings.rule.type;standings.form"}
+    )
      
 @app.get("/squads/seasons/{season_id}/teams/{team_id}")
 async def squads(season_id: int,team_id: int):  
