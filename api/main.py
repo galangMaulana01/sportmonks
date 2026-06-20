@@ -201,7 +201,6 @@ async def livescores_inplay(include: str = Query(None)):
         "/livescores/inplay",
         {"include": "participants;scores;periods;events;league.country;round;venue"}
     )
-# New endpoints for v3 as per request
 
 @app.get("/players/search/{query}")
 async def search_players(query: str, include: str = Query(None), page: int = Query(1), per_page: int = Query(25)):

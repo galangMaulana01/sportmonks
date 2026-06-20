@@ -195,12 +195,210 @@
                 </div>
             </div>
         </div>
-
     </div>
-
 <script>
-    // The script part is long, but since it's admin, we assume it's there. To save space, I'll note it's the same.
-    // For completeness, you can copy from the raw if needed, but since it's frontend, main focus is backend.
-    console.log("Admin panel loaded");
+    const API_URL = ""; 
+    
+    let bannerImageUrl = "";
+    let logoImageUrl = "";
+    
+    const bannerInput = document.getElementById("image_benner");
+    const logoInput = document.getElementById("image_logo");
+    
+    const bannerPreview = document.getElementById("banner_preview");
+    const logoPreview = document.getElementById("logo_preview");
+    
+    const descInput = document.getElementById("desc");
+    const linkInput = document.getElementById("link");
+    
+    const saveBtn = document.getElementById("saveBtn");
+    
+    window.addEventListener("DOMContentLoaded", () => {
+        loadUsers();
+        loadBanner();
+        initSidebar();
+    });
+    
+    async function loadUsers() {
+        try {
+            const res = await fetch(`${API_URL}/admin/users`);
+            const data = await res.json();
+            
+            const tbody = document.getElementById("usersTable");
+            
+            if (!data.users || data.users.length === 0) {
+                tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-6 py-6 text-center text-gray-400">
+                        Belum ada pengguna
+                    </td>
+                </tr>
+            `;
+                return;
+            }
+            
+            tbody.innerHTML = data.users.map(user => `
+            <tr class="border-b border-gray-100">
+                <td class="px-6 py-4">${user.name || "-"}</td>
+                <td class="px-6 py-4">${user.email || "-"}</td>
+                <td class="px-6 py-4">${user.ip || "-"}</td>
+                <td class="px-6 py-4">
+                    ${
+                        user.last_login
+                        ? new Date(user.last_login).toLocaleString("id-ID")
+                        : "-"
+                    }
+                </td>
+            </tr>
+        `).join("");
+            
+        } catch (err) {
+            console.error(err);
+            
+            document.getElementById("usersTable").innerHTML = `
+            <tr>
+                <td colspan="4" class="px-6 py-6 text-center text-red-500">
+                    Gagal memuat data
+                </td>
+            </tr>
+        `;
+        }
+    }
+    
+    async function loadBanner() {
+        try {
+            const res = await fetch(`${API_URL}/benner`);
+            const data = await res.json();
+            
+            bannerImageUrl = data.image_benner || "";
+            logoImageUrl = data.image_logo || "";
+            
+            descInput.value = data.desc || "";
+            linkInput.value = data.link || "";
+            
+            if (bannerImageUrl) {
+                bannerPreview.src = bannerImageUrl;
+                bannerPreview.classList.remove("hidden");
+            }
+            
+            if (logoImageUrl) {
+                logoPreview.src = logoImageUrl;
+                logoPreview.classList.remove("hidden");
+            }
+            
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    
+    bannerInput.addEventListener("change", async () => {
+        const file = bannerInput.files[0];
+        if (!file) return;
+        
+        bannerPreview.src = URL.createObjectURL(file);
+        bannerPreview.classList.remove("hidden");
+        
+        bannerImageUrl = await uploadImage(file);
+    });
+    
+    logoInput.addEventListener("change", async () => {
+        const file = logoInput.files[0];
+        if (!file) return;
+        
+        logoPreview.src = URL.createObjectURL(file);
+        logoPreview.classList.remove("hidden");
+        
+        logoImageUrl = await uploadImage(file);
+    });
+    
+    async function uploadImage(file) {
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            
+            const res = await fetch(`${API_URL}/admin/upload`, {
+                method: "POST",
+                body: formData
+            });
+            
+            const data = await res.json();
+            
+            if (!data.success) {
+                throw new Error("Upload gagal");
+            }
+            
+            return data.url;
+            
+        } catch (err) {
+            console.error(err);
+            alert("Upload gambar gagal");
+            return "";
+        }
+    }
+    
+    async function saveBanner() {
+        
+        try {
+            
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Menyimpan...";
+            
+            const payload = {
+                image_benner: bannerImageUrl,
+                image_logo: logoImageUrl,
+                desc: descInput.value,
+                link: linkInput.value
+            };
+            
+            const res = await fetch(`${API_URL}/admin/benner`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            
+            if (!data.success) {
+                throw new Error("Gagal menyimpan");
+            }
+            
+            alert("Banner berhasil disimpan");
+            
+        } catch (err) {
+            
+            console.error(err);
+            alert("Gagal menyimpan banner");
+            
+        } finally {
+            
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Simpan Perubahan";
+            
+        }
+    }
+    
+    function initSidebar() {
+        
+        const menuBtn = document.getElementById("menuBtn");
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        const closeBtn = document.getElementById("closeSidebarBtn");
+        
+        menuBtn?.addEventListener("click", () => {
+            sidebar.classList.remove("-translate-x-full");
+            overlay.classList.remove("hidden");
+        });
+        
+        closeBtn?.addEventListener("click", closeSidebar);
+        overlay?.addEventListener("click", closeSidebar);
+        
+        function closeSidebar() {
+            sidebar.classList.add("-translate-x-full");
+            overlay.classList.add("hidden");
+        }
+    }
 </script>
+</body>
 </html>
