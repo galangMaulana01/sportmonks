@@ -260,6 +260,13 @@ async def squads_by_team(team_id: int):
         f"/squads/teams/{team_id}",
         {"include": "team;player.nationality;player.statistics.details.type;player.position"}
     )
+    
+@app.get("/fixtures/head-to-head/{team1_id}/{team2_id}")
+async def h2h(team1_id: int, team2_id: int):
+    return await sportmonks_get(
+        f"/fixtures/head-to-head/{team1_id}/{team2_id}",
+        {"include": "participants;league;scores;state;venue;events"}
+    )
 
 @app.get("/standings/live/leagues/{league_id}")
 async def live_standings(league_id: int, include: str = Query(None)):
