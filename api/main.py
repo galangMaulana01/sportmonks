@@ -185,7 +185,7 @@ async def squads(season_id: int,team_id: int):
 async def team(team_id: int):  
     return await sportmonks_get(
         f"/teams/{team_id}",
-        {"include": "venue"}
+        {"include": "venue;seasons"}
     )  
    
 @app.get("/fixtures/{fixture_id}")  
