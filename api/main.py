@@ -216,18 +216,16 @@ from typing import Optional
 
 @app.get("/teams/search/{query}")
 async def search_teams(
-    query: str, 
-    include: Optional[str] = Query(None), 
-    page: int = Query(1), 
+    query: str,
+    page: int = Query(1),
     per_page: int = Query(25)
 ):
     params = {
         "page": page,
-        "per_page": per_page
+        "per_page": per_page,
+        "include": "seasons"
     }
-    if include:
-        params["include"] = include
-        
+
     return await sportmonks_get(f"/teams/search/{query}", params)
 
 @app.get("/leagues")  
